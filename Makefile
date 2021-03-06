@@ -1,4 +1,4 @@
-CC=gcc -std=gnu99 -g -Wall
+CC=gcc -std=gnu99 -g
 
 all: keygen.o enc_client.o enc_server.o
 	$(CC) -o keygen keygen.o 
