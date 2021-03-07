@@ -6,6 +6,7 @@
 #include <sys/types.h>  // ssize_t
 #include <sys/socket.h> // send(),recv()
 #include <netdb.h>      // gethostbyname()
+#include "send_recv.h"
 
 static const char KeyCode[28] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
 /**
@@ -15,11 +16,13 @@ static const char KeyCode[28] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
 * 3. Print the message received from the server and exit the program.
 */
 
+#if 0
 // Error function used for reporting issues
 void error(const char *msg) { 
   perror(msg); 
   exit(0); 
 } 
+#endif
 
 // Set up the address struct
 void setupAddressStruct(struct sockaddr_in* address, 
@@ -75,7 +78,7 @@ int loadFiles(char* plainTextPath, char* keyPath, char* plainBuffer,
 		plainBuffer[strcspn(plainBuffer, "\n")] = '\0';
 		keyBuffer[strcspn(keyBuffer, "\n")] = '\0';
 	}
-https://beej.us/guide/bgnet/html/index-wide.html#sendall	fclose(keyFile);
+	fclose(keyFile);
 	fclose(plaintextFile);
 	return 1;
 }
@@ -93,11 +96,13 @@ bool checkLengths(char* first, char* second) {
 bool checkValidChars(char* toCheck) {
 	bool found;
 	for (int i = 0; i < strlen(toCheck); ++i) {
+		found = false;
 		for (int j = 0; j < 27; ++j) {
-			if (toCheck[i] == KeyCode[j]) {
+			if (toCheck[i] == KeyCode[j] || toCheck[i] == '\n') {
 				found = true;
-				if (toCheck[i] == '\n')
-					return false;
+			}
+			if (found == false) {
+				return false;
 			}
 		}
 	}
@@ -107,7 +112,6 @@ bool checkValidChars(char* toCheck) {
 
 // check if correct program (enc_client) is connecting to the server.  Returns 
 // true if it correct, if it is another program it returns false;
-// TODO: fix segfaul
 bool checkHandshake(int sock, char* handshakeMessage) {
 	int bytesSent, bytesReceived; // to keep track of characters written from send
 																// and read from recv
@@ -129,7 +133,7 @@ bool checkHandshake(int sock, char* handshakeMessage) {
 		error("ERROR: recv()");
 	}
 
-	printf("Handshake: %s\n", handshakeMessage);
+	//printf("Handshake: %s\n", handshakeMessage);
 	// see if handshake was valid or not, return TRUE or FALSE respectively
 	if (strcmp(handshakeMessage, "OK") == 0) {
 		return true;
@@ -140,9 +144,10 @@ bool checkHandshake(int sock, char* handshakeMessage) {
 	
 }
 
+#if 0
 // adapted from Beej's guide to network programming, source found here: 
 // https://beej.us/guide/bgnet/html/index-wide.html#sendall
-int sendData(int sock, char* buffer, int* numBytes) {
+void sendData(int sock, char* buffer, int* numBytes) {
 	int total = 0; 
 	int bytesRemaining = *numBytes;
 	int bytesSent;
@@ -153,10 +158,9 @@ int sendData(int sock, char* buffer, int* numBytes) {
 			error("ERROR: Socket");
 		total += bytesSent;
 		bytesRemaining -= bytesSent;
-	}
-	
+	}	
 }
-
+#endif
 
 int main(int argc, char *argv[]) {
   int socketFD, portNumber, charsWritten, charsRead;
@@ -170,12 +174,14 @@ int main(int argc, char *argv[]) {
 	
 	char plaintextBuffer[72000];
 	char keyBuffer[72000];
+	char cypherText[72000];
 	char handshakeMessage[256]; // holds initial message to 
 
 	memset(plaintextBuffer, '\0', sizeof(plaintextBuffer));
 	memset(keyBuffer, '\0', sizeof(keyBuffer));
+  
   // Check usage & args
-  if (argc < 4) { 
+ 	if (argc < 4) { 
     fprintf(stderr,"USAGE: %s plaintext key port\n", argv[0]); 
     exit(0); 
   } 
@@ -183,22 +189,20 @@ int main(int argc, char *argv[]) {
 	// load files supplied as command line arguments
 	loadFiles(argv[1], argv[2], plaintextBuffer, keyBuffer);
 	
-	//printf("%s%s", plaintextBuffer, keyBuffer);
-	fflush(stdout);
+	// check if file lengths match
 	if(!(checkLengths(plaintextBuffer, keyBuffer))) {
 		printf("%s\n", "File lengths do not match");
 		exit(0);
 	}
 
-	/*
-	if (!(checkValidChars(plaintextBuffer)) || !(checkValidChars(keyBuffer))) {
+/*	
+	if (checkValidChars(plaintextBuffer) == false || 
+		checkValidChars(keyBuffer) == false) {
 		printf("%s\n", "Invalid characters in file");
 		exit(0);
 	}
-	*/
+*/
 
-	//printf("%s%s", plaintextBuffer, keyBuffer);
-	fflush(stdout);
 	// Create a socket
   socketFD = socket(AF_INET, SOCK_STREAM, 0); 
   if (socketFD < 0){
@@ -212,46 +216,20 @@ int main(int argc, char *argv[]) {
   if (connect(socketFD, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0){
     error("CLIENT: ERROR connecting");
   }
-  // Get input message from user
-  /*
-	printf("CLIENT: Enter text to send to the server, and then hit enter: ");
-  */
+  
   // Clear out the buffer array arrays
   memset(buffer, '\0', sizeof(buffer));
   memset(handshakeMessage, '\0', sizeof(handshakeMessage));
   memset(plaintextFile, '\0', sizeof(plaintextFile));
 
-	// validHandshake = checkHandshake(socketFD, "enc_client");
-	
 	//set handshake message
 	strcpy(handshakeMessage, "enc_client");
-
-	// send handshake message to server
-	handshakeChars = send(socketFD, handshakeMessage, strlen(handshakeMessage), 0);
+	validHandshake = checkHandshake(socketFD, handshakeMessage);
 	
-	if (handshakeChars < 0) {
-		error("CLIENT: ERROR writing to socket");
-	}
-	if (handshakeChars < strlen(handshakeMessage)) {
-		error("CLIENT: Not all handshake data written, potentially unpredictable behavior!");
-	}
-	
-	// clear out handshakeMessage to recieve reply from server
-	memset(handshakeMessage, '\0', sizeof(handshakeMessage));
-
-	handshakeChars = recv(socketFD, handshakeMessage, sizeof(handshakeMessage) - 1, 0);
-	if (handshakeChars < 0) {
-		error("CLIENT: ERROR reading from socket");
-	}
-	printf("CLIENT: Handshake: %s\n", handshakeMessage);
-	
-	//if (validHandshake) {
-	 if (strcmp(handshakeMessage, "OK") == 0) {
-		printf("%s", "CLIENT: preparing to write data\n");
+	if (validHandshake) {
+		//printf("%s", "CLIENT: preparing to write data\n");
 		int bytesToSend, bytesSent = 0;
 		char dataToSend[144000], sendBuffer[256];
-		//char* token;
-		//int location = 0; //location of pointer in dataToSend string
 
 		memset(dataToSend, '\0', sizeof(dataToSend));
 
@@ -259,20 +237,25 @@ int main(int argc, char *argv[]) {
 		strcat(dataToSend, plaintextBuffer);
 		strcat(dataToSend, keyBuffer);
 
-		bytesToSend = strlen(plaintextBuffer) + strlen(keyBuffer);
-		char bytesString[32];
-
-		sprintf(bytesString, "%d", bytesToSend);
-			
-		charsWritten = send(socketFD, bytesString, strlen(bytesString), 0);
+		bytesToSend = (int) strlen(plaintextBuffer) + (int) strlen(keyBuffer);
 
 		// possibly consolidate the send call into the sendData function
 		sendData(socketFD, dataToSend, &bytesToSend);		
 		send(socketFD, "@", 2, 0);
+		
+		memset(cypherText, '\0', sizeof(cypherText));
+
+		recvAll(socketFD, cypherText, buffer, "@");
+		char* delim_location = strstr(cypherText, "@");
+
+		if (delim_location != NULL) {
+			*delim_location = '\0';
+		}
+		printf("%s\n", cypherText);
 	}
 
 	else {
-		printf("%s\n", "Handshake failed, client exiting");
+		error("ERROR: Handshake failed, client exiting");
 	}
   
 	close(socketFD); 

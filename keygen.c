@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
+#include "encrypt_decrypt.h"
 
 #define MAX_KEY_LENGTH 100000
 // ascii value for capital 'A' starts at 65...
@@ -34,6 +35,7 @@ void generateKey(char* buffer, int keyLength) {
 	buffer[keyLength + 1] = '\0';
 }
 
+#if 0
 // TODO figure encrypt/decryption of SPACE character
 void encryptPlainText(char* plainText, char* key, char* cypherText, int keyLength) {
 	int encryptedChar; // ASCII value for char
@@ -129,21 +131,35 @@ void decryptKey(char* encryptedText, char* key, char* decryptedText, int keyLeng
 
 	}
 }
+#endif
 
-int main() {
+int main(int argc, char* argv[]) {
 	char key[MAX_KEY_LENGTH];
 	char cyph[MAX_KEY_LENGTH];
 	char decryp[MAX_KEY_LENGTH];
 
 	// seed rand() 
 	srand(time(NULL));
+
+	if (argc < 2) {
+		printf("ERROR: Usage: ./%s keylength\n", argv[0]);
+		exit(0);
+	}
 	
+	int keyLength = atoi(argv[1]);
+	
+	generateKey(key, keyLength);
+	strcat(key, "\n");
+	printf("%s", key);
+	#if 0
+	printf("%s", "\nbeginning test\n--------------------\n");
 	generateKey(key, 8);
 	printf("HELLO ME\n");
 	printf("%s", key);
-	encryptPlainText("HELLO ME\n", key, cyph, 8);
+	encryptPlaintext("HELLO ME\n", key, cyph, 8);
 	printf("%s", cyph);
 	decryptKey(cyph, key, decryp, 8);
 	printf("%s", decryp);
+	#endif
 	return 0;
 }

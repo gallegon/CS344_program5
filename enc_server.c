@@ -7,12 +7,22 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdlib.h>
+#include "encrypt_decrypt.h"
+#include "send_recv.h"
 
+#if 0
 // Error function used for reporting issues
 void error(const char *msg) {
   perror(msg);
   exit(1);
 } 
+
+// Error function used for reporting issues
+void error(const char *msg) {
+  perror(msg);
+  exit(1);
+}
+#endif
 
 // Set up the address struct for the server socket
 void setupAddressStruct(struct sockaddr_in* address, 
@@ -29,6 +39,7 @@ void setupAddressStruct(struct sockaddr_in* address,
   address->sin_addr.s_addr = INADDR_ANY;
 }
 
+#if 0
 // recieves all data from sender until a delimiter is found
 void recvAll (int sock, char* storeBuffer, char* sockBuffer, char* delimiter) {
 	int charsRead; // amount of bytes read from socket
@@ -44,10 +55,11 @@ void recvAll (int sock, char* storeBuffer, char* sockBuffer, char* delimiter) {
 		strcat(storeBuffer, sockBuffer);
 	}
 }
+#endif
 
 int main(int argc, char *argv[]){
   int connectionSocket, charsRead;
-  char buffer[256];
+  char buffer[256], plaintextBuffer[72000], keyBuffer[72000], cypherText[72000];
   struct sockaddr_in serverAddress, clientAddress;
   bool socketBound = true;
   socklen_t sizeOfClientInfo = sizeof(clientAddress);
@@ -80,7 +92,9 @@ int main(int argc, char *argv[]){
   
   // Accept a connection, blocking if one is not available until one connects
   while(1 && socketBound){
-    // Accept the connection request which creates a connection socket
+	 char recieveBuffer[144000];
+	 
+	 // Accept the connection request which creates a connection socket
     connectionSocket = accept(listenSocket, 
                 (struct sockaddr *)&clientAddress, 
                 &sizeOfClientInfo); 
@@ -89,8 +103,8 @@ int main(int argc, char *argv[]){
     }
 
     printf("SERVER: Connected to client running at host %d port %d\n", 
-                          ntohs(clientAddress.sin_addr.s_addr),
-                          ntohs(clientAddress.sin_port));
+    	ntohs(clientAddress.sin_addr.s_addr), 
+		ntohs(clientAddress.sin_port));
 
     // Get the message from the client and display it
     memset(buffer, '\0', 256);
@@ -110,28 +124,41 @@ int main(int argc, char *argv[]){
 			}
 		}	
 		else {
-	 		char recieveBuffer[144000];
+	 		// char recieveBuffer[144000];
 			memset(recieveBuffer, '\0', sizeof(recieveBuffer));
 	 		charsRead = send(connectionSocket, "OK", 3, 0); 
     	if (charsRead < 0){
       	error("ERROR writing to socket");
     	}
 			
-			// clear buffer before recieving more data
-			memset(buffer, '\0', sizeof(buffer));
-			// get the size of data that is being send
-			charsRead = recv(connectionSocket, buffer, sizeof(buffer) - 1, 0);
-			if (charsRead < 0) {
-				error("ERROR reading from socket");
-			}
-			int bytesToRead = atoi(buffer);
-			int bytesRead = 0;
-			
 			recvAll(connectionSocket, recieveBuffer, buffer, "@");
 			
 			// for testing
 			printf("Server recieved: %s\n", recieveBuffer);	
 		}
+		
+		// remove delimiting character from recieved data
+		char* delim_location = strstr(recieveBuffer, "@");
+		*delim_location = '\0';
+		
+		// clearout buffers before copying data recieved into them
+		memset(plaintextBuffer, '\0', sizeof(plaintextBuffer));
+		memset(keyBuffer, '\0', sizeof(keyBuffer));
+		memset(cypherText, '\0', sizeof(cypherText));
+		
+		int buffLen = (int) strlen(recieveBuffer) / 2;
+
+		for (int i = 0; i < buffLen; ++i) {
+			plaintextBuffer[i] = recieveBuffer[i];
+			keyBuffer[i] = recieveBuffer[i + buffLen];
+		}
+		encryptPlaintext(plaintextBuffer, keyBuffer, cypherText, buffLen);
+		printf("server cypher text: %s\n", cypherText);
+	
+		int bytesToSend = strlen(cypherText);
+
+		sendData(connectionSocket, cypherText, &bytesToSend);
+		send(connectionSocket, "@", 2, 0); 
     close(connectionSocket); 
   }
   // Close the listening socket
