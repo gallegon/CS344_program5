@@ -87,4 +87,3 @@ void decryptKey(char* encryptedText, char* key, char* decryptedText, int keyLeng
 
    }
 }
-

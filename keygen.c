@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) {
 	int keyLength = atoi(argv[1]);
 	
 	generateKey(key, keyLength);
-	strcat(key, "\n");
+	//strcat(key, "\n");
 	printf("%s", key);
 	#if 0
 	printf("%s", "\nbeginning test\n--------------------\n");
