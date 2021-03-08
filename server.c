@@ -106,7 +106,7 @@ void run_server(int portNumber, char* validHandshakeToken, char* mode) {
 		if (strcmp(mode, "encrypt") == 0) 
 			encryptPlaintext(plaintextBuffer, keyBuffer, cypherText, buffLen);
 		else if (strcmp(mode, "decrypt") == 0)
-			decryptKey (keyBuffer, plaintextBuffer, cypherText, buffLen);
+			decryptKey (plaintextBuffer, keyBuffer, cypherText, buffLen);
 
 		//printf("server cypher text: %s\n", cypherText);
 

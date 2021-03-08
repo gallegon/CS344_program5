@@ -8,6 +8,6 @@ int main(int argc, char* argv[]) {
 		exit(0); 
 	}
 
-	run_client(argv[2], argv[1], atoi(argv[3]), "dec_client");
+	run_client(argv[1], argv[2], atoi(argv[3]), "dec_client");
 	return 0;
 }

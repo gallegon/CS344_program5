@@ -230,7 +230,7 @@ void run_client(char* plaintextPath, char* keyfilePath, int portNumber,
 		if (delim_location != NULL) {
 			*delim_location = '\0';
 		}
-		printf("%s\n", cypherText);
+		printf("%s", cypherText);
 	}
 
 	else {
