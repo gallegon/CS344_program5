@@ -1,3 +1,6 @@
+/* file name: client.h
+	author: Nicholai Gallegos
+	date: 3/8/2021 */
 #ifndef CLIENT_H
 #define CLIENT_H
 
@@ -10,6 +13,8 @@
 #include <sys/socket.h> // send(),recv()
 #include <netdb.h>      // gethostbyname()
 #include "send_recv.h"
+
+// function prototypes for client.c
 
 void run_client(char* plaintextPath, char* keyfilePath, int portNumber,
       char* handshakeToken);

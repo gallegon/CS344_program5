@@ -1,11 +1,8 @@
+/* file name: encrypt_decrypt.c
+	author: Nicholai Gallegos
+	date: 3/8/2021 */
 #include "encrypt_decrypt.h"
 
-#if 0
-#include <stdlib.h>
-#include <time.h>
-#include <stdio.h>
-#include <string.h>
-#endif
 
 #define MAX_KEY_LENGTH 100000
 // ascii value for capital 'A' starts at 65...
@@ -16,7 +13,8 @@
 #define SYMB_SPACE 26
 
 const char KeyCode[28] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ ";
- 
+
+// encrypt a plaintext with a key and store into cypherText
 void encryptPlaintext(char* plainText, char* key, char* cypherText, int keyLength) {
    int encryptedChar; // ASCII value for char
    int keyChar;
@@ -44,12 +42,13 @@ void encryptPlaintext(char* plainText, char* key, char* cypherText, int keyLengt
 			encryptedChar = (plainChar + keyChar) % 27; 
 			cypherText[i] = KeyCode[encryptedChar];	
       }   
-    
+   	// add newline and null terminator 
       cypherText[keyLength] = '\n';
       cypherText[keyLength + 1] = '\0';
    }   
 }
 
+// decrypt a cyphertext with a key and store into decryptedText
 void decryptKey(char* encryptedText, char* key, char* decryptedText, int keyLength) {
    int decryptedChar;
    int encryptedChar;
@@ -71,17 +70,22 @@ void decryptKey(char* encryptedText, char* key, char* decryptedText, int keyLeng
 			if (encryptedChar < 0) {
 				encryptedChar = SYMB_SPACE;
 			}
-				
+			
+			// subtract values to get decrypted character
 			decryptedChar = (encryptedChar - keyChar);
 
+			// add 27 if character is negative
          if (decryptedChar < 0) { 
             decryptedChar += 27;
 			}
 
+			// modulo 27 just in case...
          decryptedChar %= 27;
 
+			// set decrypted text to the corresponding keycode value
          decryptedText[i] = KeyCode[decryptedChar];
       }
+		// add newline and null terminator
       decryptedText[keyLength] = '\n';
       decryptedText[keyLength + 1] = '\0';
 
